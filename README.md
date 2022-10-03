@@ -1,3 +1,7 @@
+# Personnal notes with `notion` :
+https://fuschia-sprint-9c0.notion.site/NODE-JS-eb3835ef3bd7498180e6d4a563688c67
+
+
 # Course Material and FAQ for my Complete Node.js, Express and MongoDB Bootcamp
 
 This repo contains starter files and the finished project files for all the projects contained in the course (complete repo size is **288MB**).
