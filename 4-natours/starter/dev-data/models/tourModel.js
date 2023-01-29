@@ -75,8 +75,36 @@ const tourSchema = new mongoose.Schema(
     },
     startDates: [Date],
     secretTour: { type: Boolean, default: false },
+    // GeoJSON. Ici entre brackets ce ne sont pas les options du schéma
+    startLocation: {
+      // les brackets dans 'type' sont les options du 'type'
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      adress: String,
+      description: String,
+    },
+    // Below we have an array of object: it will create new document inside of the parent document(Tours)
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
   },
-  // Arg 2 sont les options (vituals)
+
+  // Arg 2 sont les options (virtuals)
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -94,6 +122,12 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+// tourSchema.pre('save', async function (next) {
+//   const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+//   this.guides = await Promise.all(guidesPromises);
+//   next();
+// });
+
 // tourSchema.post('save', function (doc, next) {
 //   console.log(doc);
 //   next();
@@ -110,6 +144,14 @@ tourSchema.pre(/^find/, function (next) {
 tourSchema.post(/^find/, function (docs, next) {
   console.log(`Query took ${Date.now() - this.start} milliseconds`);
   //   console.log(docs);
+  next();
+});
+
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
   next();
 });
 
