@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const sluglify = require('slugify');
+// const Review = require('./reviewModel');
 // const validator = require('validator');
 
 const tourSchema = new mongoose.Schema(
@@ -114,6 +115,15 @@ const tourSchema = new mongoose.Schema(
 // @inModels
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
+});
+
+// Virtual populate
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  // FK :
+  foreignField: 'tour',
+  // PK :
+  localField: '_id',
 });
 
 // 1-DOCUMENT MIDDLEWEARE : runs before .save() and .create()

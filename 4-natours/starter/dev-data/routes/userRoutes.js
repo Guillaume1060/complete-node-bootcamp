@@ -1,3 +1,6 @@
+// password pour tous 'test1234'
+// +Enlever les commentaires pour les midlewares dans UserModel
+
 const express = require('express');
 
 const router = express.Router();
@@ -9,13 +12,16 @@ router.post('/login', authController.login);
 
 router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);
-router.patch(
-  '/updateMyPassword',
-  authController.protect,
-  authController.updatePassword
-);
-router.patch('/updateMe', authController.protect, userController.updateMe);
-router.delete('/deleteMe', authController.protect, userController.deleteMe);
+
+// le middleware ci dessous sera appliqué à toutes les routes en dessous
+router.use(authController.protect);
+
+router.patch('/updateMyPassword', authController.updatePassword);
+router.get('/me', userController.getMe, userController.getUser);
+router.patch('/updateMe', userController.updateMe);
+router.delete('/deleteMe', userController.deleteMe);
+
+router.use(authController.restrictTo('admin'));
 
 router
   .route('/')
