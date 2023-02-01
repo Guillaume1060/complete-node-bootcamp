@@ -51,21 +51,21 @@ const userSchema = new mongoose.Schema({
 });
 
 // Here a preSave middleweare before recording in the DB
-// userSchema.pre('save', async function (next) {
-//   // Only run the function if password was modified
-//   if (!this.isModified('password')) return next();
-//   // Hash the password with cost of 12 (using npm bcryptjs)
-//   this.password = await bcrypt.hash(this.password, 12);
-//   // Delete the passwordConfirm before sending it to the DB
-//   this.passwordConfirm = undefined;
-//   next();
-// });
+userSchema.pre('save', async function (next) {
+  // Only run the function if password was modified
+  if (!this.isModified('password')) return next();
+  // Hash the password with cost of 12 (using npm bcryptjs)
+  this.password = await bcrypt.hash(this.password, 12);
+  // Delete the passwordConfirm before sending it to the DB
+  this.passwordConfirm = undefined;
+  next();
+});
 
-// userSchema.pre('save', function (next) {
-//   if (!this.isModified('password') || this.isNew) return next();
-//   this.passwordChangedAt = Date.now() - 1000;
-//   next();
-// });
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) return next();
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
 
 userSchema.pre(/^find/, function (next) {
   // this point to the current query
