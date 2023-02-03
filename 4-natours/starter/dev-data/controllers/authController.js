@@ -60,6 +60,17 @@ exports.login = catchAsync(async (req, res, next) => {
   createAndSendToken(user, 200, res);
 });
 
+// On créé un cookie éphémère pour le logOut (sans token) qui ecrasera le cookie du login (qui lui est protégé)
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+  res.status(200).json({
+    status: 'success',
+  });
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
   // 1. Get the token and check if it exists
   let token;
@@ -86,31 +97,36 @@ exports.protect = catchAsync(async (req, res, next) => {
   // on permet l'accès aux infos de l'user au middleweare suivant (grace à req.user)
   // console.log('2', currentUser);
   req.user = currentUser;
+  res.locals.user = currentUser;
   next();
 });
 
 // Only for rended pages, no error
-exports.isLoggedIn = catchAsync(async (req, res, next) => {
+exports.isLoggedIn = async (req, res, next) => {
   if (req.cookies.jwt) {
-    // 1/verify token
-    const decoded = await promisify(jwt.verify)(
-      req.cookies.jwt,
-      process.env.JWT_SECRET
-    );
-    // 2. Check if user still exists
-    const currentUser = await User.findById(decoded.id);
-    if (!currentUser) return next();
+    try {
+      // 1/verify token
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+      // 2. Check if user still exists
+      const currentUser = await User.findById(decoded.id);
+      if (!currentUser) return next();
 
-    // 3. Check if user changed password after the token was issued (optionnal?)
-    if (currentUser.changesPasswordAfter(decoded.iat)) {
+      // 3. Check if user changed password after the token was issued (optionnal?)
+      if (currentUser.changesPasswordAfter(decoded.iat)) {
+        return next();
+      }
+      // THERE IS A LOGGED USER
+      res.locals.user = currentUser;
+      return next();
+    } catch (err) {
       return next();
     }
-    // THERE IS A LOGGED USER
-    res.locals.user = currentUser;
-    return next();
   }
   next();
-});
+};
 
 // Technique pour ajouter des paramètres à un middleweare
 exports.restrictTo =

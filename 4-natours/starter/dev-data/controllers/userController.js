@@ -23,13 +23,12 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   // 2. Filter our unwanted fieldsname not allowed
   const fliteredBody = filterObj(req.body, 'name', 'email');
   // 3.Update user's document
-  console.log(req.user.id);
   const updatedUser = await User.findByIdAndUpdate(req.user._id, fliteredBody, {
     new: true,
     runValidators: true,
   });
   res.status(200).json({
-    status: 'succes',
+    status: 'success',
     data: {
       user: updatedUser,
     },
