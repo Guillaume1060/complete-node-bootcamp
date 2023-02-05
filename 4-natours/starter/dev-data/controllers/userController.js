@@ -2,6 +2,54 @@ const User = require('../models/userModel');
 const AppError = require('../utils/appErros');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
+// NPM I MULTER
+const multer = require('multer');
+const sharp = require('sharp');
+
+/// CI DESSOUS ON NOMME LE FICHIER, ET ON INFORME LA DESTINATION
+// const multerStorage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'public/img/users');
+//   },
+//   filename: (req, file, cb) => {
+//     // user-76767555-665356.jpeg
+//     const ext = file.mimetype.split('/')[1];
+//     cb(null, `user-${req.user.id}-${Date.now()}.${ext}`);
+//   },
+// });
+
+/// on modifie le multerStorage car on va redéfinir la size dans le prochain middleware avant de sauvegarder le fichier
+/// l'image will be saved as a buffer
+const multerStorage = multer.memoryStorage();
+/// CI FILTRE POUR S'ASSURER DU TYPE DE FICHIER
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new AppError('Not an image', 400), false);
+  }
+};
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+// below uploadUserPhoto est le middleware exporté aux routes
+exports.uploadUserPhoto = upload.single('photo');
+
+// below middleware to resize the picture
+exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
+  if (!req.file) return next();
+
+  req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+  await sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/img/users/${req.file.filename}`);
+
+  next();
+});
 
 const filterObj = (obj, ...allowedFields) => {
   const newObject = {};
@@ -22,6 +70,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     return next(new AppError('No update of password on this pagre', 400));
   // 2. Filter our unwanted fieldsname not allowed
   const fliteredBody = filterObj(req.body, 'name', 'email');
+  if (req.file) fliteredBody.photo = req.file.filename;
   // 3.Update user's document
   const updatedUser = await User.findByIdAndUpdate(req.user._id, fliteredBody, {
     new: true,
